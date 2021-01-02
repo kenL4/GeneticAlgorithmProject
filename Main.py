@@ -73,12 +73,14 @@ class Player:
     def mutate(self):
         chance = 0.1
         for i in range(len(self.path)):
-            self.path[i] += random.randint(-5, 5)
+            mutating = random.random()
+            if mutating < chance:
+                self.path[i] += random.randint(-30, 30)
 
     def fitness(self):
         distanceFromGoal = (abs(275 - self.y)**2 + abs((0 - self.x)) ** 2)**(1/2)
-        finish = 1 if self.reachedGoal else 0
-        return (1/(distanceFromGoal**2) if distanceFromGoal != 0 else 1) + finish + (1/self.movesTaken)
+        finish = 2 if self.reachedGoal else 0
+        return (1/(distanceFromGoal**2) if distanceFromGoal != 0 else 1) + finish + (1/self.movesTaken**(3/2))
 
 class Goal:
     def __init__(self, x, y):
@@ -189,52 +191,62 @@ generation = Population(popSize, goal)
 generationCount = 0
 winners = 0
 
-while True:
-    window.bgcolor("grey")
-    goalTurtle = turtle.Turtle()
-    goalTurtle.penup()
-    goalTurtle.hideturtle()
-    goalTurtle.color("red")
-    goalTurtle.shape("square")
-    goalTurtle.shapesize(1,1)
-    goalTurtle.goto(goal.getX(), goal.getY())
-    goalTurtle.showturtle()
-    turtle.tracer(0,0)
-    genTurtle = turtle.Turtle()
-    genTurtle.hideturtle()
-    genTurtle.penup()
-    genTurtle.goto(-375, 275)
-    genTurtle.pendown()
-    genTurtle.write("Generation "+str(generationCount))
-    genTurtle.penup()
-    genTurtle.goto(275, 275)
-    genTurtle.pendown()
-    genTurtle.write("Last gen winners:" + str(winners))
-    if generationCount > 0:
+try:
+    while True:
+        window.bgcolor("grey")
+        goalTurtle = turtle.Turtle()
+        goalTurtle.penup()
+        goalTurtle.hideturtle()
+        goalTurtle.color("red")
+        goalTurtle.shape("square")
+        goalTurtle.shapesize(1,1)
+        goalTurtle.goto(goal.getX(), goal.getY())
+        goalTurtle.showturtle()
+        turtle.tracer(0,0)
+        genTurtle = turtle.Turtle()
+        genTurtle.hideturtle()
+        genTurtle.penup()
+        genTurtle.goto(-375, 275)
+        genTurtle.pendown()
+        genTurtle.write("Generation "+str(generationCount))
+        genTurtle.penup()
+        genTurtle.goto(275, 275)
+        genTurtle.pendown()
+        genTurtle.write("Last gen winners:" + str(winners))
+        if generationCount > 0:
+            for i in generation.playerPopulation:
+                i.playerTurtle = turtle.Turtle()
+                i.playerTurtle.speed(0)
+                i.playerTurtle.penup()
+                if i.colour == "green":
+                    i.playerTurtle.color("green")
+                else:
+                    i.playerTurtle.color("black")
+                i.playerTurtle.shape("square")
+                i.playerTurtle.shapesize(0.5,0.5)
+                i.playerTurtle.hideturtle()
+                i.playerTurtle.goto(0, -75)
+                i.playerTurtle.showturtle()
+            turtle.update()
+
+        turtle.tracer(0,0)
+        generation.update()
+        winners = 0
         for i in generation.playerPopulation:
-            i.playerTurtle = turtle.Turtle()
-            i.playerTurtle.speed(0)
-            i.playerTurtle.penup()
-            if i.colour == "green":
-                i.playerTurtle.color("green")
-            else:
-                i.playerTurtle.color("black")
-            i.playerTurtle.shape("square")
-            i.playerTurtle.shapesize(0.5,0.5)
-            i.playerTurtle.hideturtle()
-            i.playerTurtle.goto(0, -75)
-            i.playerTurtle.showturtle()
-        turtle.update()
+            if i.won():
+                winners += 1
 
-    turtle.tracer(0,0)
-    generation.update()
-    winners = 0
-    for i in generation.playerPopulation:
-        if i.won():
-            winners += 1
-
-    generationCount += 1
-    generation.mutate()
-    window.clearscreen()
+        generationCount += 1
+        generation.mutate()
+        window.clearscreen()
+except Exception:
+    with open("BestPath.txt", "w") as f:
+        fittest = []
+        fitness = 0
+        for i in generation.playerPopulation:
+            if i.fitness() > fitness:
+                fittest = i.path
+                fitness = i.fitness()
+        f.write(str(fittest))
     
         
