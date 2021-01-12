@@ -82,7 +82,7 @@ class Player:
         self.coefficient = coefficient
 
     def mutate(self):
-        chance = 0.075
+        chance = 0.05
         mutating = random.random()
         if mutating < chance:
             self.generateRandom()
@@ -99,7 +99,7 @@ class Player:
     def fitness(self):
         distanceFromGoal = (abs(self.goal.y - self.y)**2 + abs((self.goal.x - self.x)) ** 2)**(1/2)
         finish = 2 if self.reachedGoal else 0
-        return (1/(distanceFromGoal**2) if distanceFromGoal != 0 else 1) + finish + (1/self.movesTaken**(3/2))
+        return (1/(distanceFromGoal**3) if distanceFromGoal != 0 else 1) + finish + (1/self.movesTaken**2)
 
 class Goal:
     def __init__(self, x, y):
