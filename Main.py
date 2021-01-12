@@ -125,11 +125,15 @@ class Population:
     winners = 0
     playerPopulation = []
     def __init__(self, size, goal):
+        startX = random.randint(-375, 375)
+        startY = random.randint(-275, 275)
         self.size = size
         self.winners = 0
         self.goal = goal
         for i in range(size):
             newplayer = Player(goal, turtle.Turtle(), "black")
+            newplayer.x = startX
+            newplayer.y = startY
             self.playerPopulation.append(newplayer)
         print("Population Initialized")
     
@@ -157,6 +161,8 @@ class Population:
         return True
 
     def mutate(self):
+        startX = random.randint(-375, 375)
+        startY = random.randint(-275, 275)
         global bias
         self.winners = 0
         fitnessTotal = int(sum([player.fitness() for player in self.playerPopulation]))
@@ -180,6 +186,8 @@ class Population:
             newPlayer.coefficient = babycoefficients
             newPlayer.vel = parent1.vel if random.random() > 0.5 else parent2.vel
             newPlayer.mutate()
+            newPlayer.x = startX
+            newPlayer.y = startY
             newPopulation.append(newPlayer)
         self.playerPopulation = newPopulation
         self.goal.x = random.randint(-375, 375)
