@@ -82,7 +82,7 @@ class Player:
         self.coefficient = coefficient
 
     def mutate(self):
-        chance = 0.1
+        chance = 0.075
         mutating = random.random()
         if mutating < chance:
             self.generateRandom()
@@ -248,7 +248,7 @@ try:
         genTurtle.penup()
         genTurtle.goto(275, 275)
         genTurtle.pendown()
-        genTurtle.write("Last gen winners:" + str(100*int(winners)/round(popSize)) + "%")
+        genTurtle.write("Last gen winners:" + str(round(100*winners/popSize)) + "%")
         if generationCount > 0:
             for i in generation.playerPopulation:
                 i.playerTurtle = turtle.Turtle()
@@ -283,6 +283,6 @@ except Exception:
             if i.fitness() > fitness:
                 fittest = i.coefficient
                 fitness = i.fitness()
-        f.write(fittest)
+        f.write(str(fittest[0]) + ", " + str(fittest[1]) + ", " + str(fittest[2]) + ", " + str(fittest[3]))
     
         
