@@ -8,12 +8,12 @@ class Player:
     y = -75
     reachedGoal = False
     dead = False
-    path = []
-    movesTaken = 0
+    coefficient = []
+    movesTaken = 1
 
     def __init__(self, goal, playerTurtle, colour):
         self.colour = colour
-        self.vel = random.randint(75, 125)
+        self.vel = 50
         self.goal = goal
         self.playerTurtle = playerTurtle
         if playerTurtle:
@@ -28,12 +28,13 @@ class Player:
             self.playerTurtle.showturtle()
         self.generateRandom()
 
-    def move(self, step):
+    def move(self, moveX, moveY):
         #if not reached goal and not dead allow movement
         if not self.reachedGoal and not self.dead:
             self.playerTurtle.showturtle()
-            self.playerTurtle.setheading(self.path[step])
-            self.playerTurtle.forward(self.vel)
+            #self.playerTurtle.setheading(self.coefficient[step])
+            #self.playerTurtle.forward(self.vel)
+            self.playerTurtle.goto((self.x + moveX), (self.y + moveY))
             self.x = self.playerTurtle.xcor()
             self.y = self.playerTurtle.ycor()
             self.movesTaken += 1
@@ -41,9 +42,14 @@ class Player:
     def checkCollision(self):
         if self.y > 295 or self.y < -290 or self.x < -395 or self.x > 390:
             self.dead = True
-            self.movesTaken = 50
+            self.x = self.playerTurtle.xcor()
+            self.y = self.playerTurtle.ycor()
+            return True
         if self.goal.checkCollision(self):
             self.reachedGoal = True
+            self.x = self.playerTurtle.xcor()
+            self.y = self.playerTurtle.ycor()
+            return True
 
     def won(self):
         return self.reachedGoal
@@ -64,21 +70,34 @@ class Player:
         self.y = -75
 
     def generateRandom(self):
-        path = []
-        for i in range(50):
-            randomAngle = random.randint(0, 360)
-            path.append(randomAngle)
-        self.path = path
+        # gradientX, gradientY, distanceX, distanceY
+        coefficient = []
+        for i in range(4):
+            randomCoefficient = random.random()
+            pon = random.random()
+            if pon > 0.5:
+                coefficient.append(randomCoefficient)
+            else:
+                coefficient.append(-randomCoefficient)
+        self.coefficient = coefficient
 
     def mutate(self):
         chance = 0.1
-        for i in range(len(self.path)):
-            mutating = random.random()
-            if mutating < chance:
-                self.path[i] += random.randint(-30, 30)
+        mutating = random.random()
+        if mutating < chance:
+            self.generateRandom()
+
+    def calculateOutput(self):
+        changeInY = (self.goal.y - self.y)
+        changeInX = (self.goal.x - self.x)
+        distanceToGoal = (abs(self.goal.y - self.y)**2 + abs((self.goal.x - self.x)) ** 2)**(1/2)
+        hiddenLayer = self.coefficient
+        moveX = (changeInX * hiddenLayer[0]) + 50 * hiddenLayer[2]
+        moveY = (changeInY * hiddenLayer[1]) + 50 * hiddenLayer[3]
+        self.move(moveX, moveY)
 
     def fitness(self):
-        distanceFromGoal = (abs(275 - self.y)**2 + abs((0 - self.x)) ** 2)**(1/2)
+        distanceFromGoal = (abs(self.goal.y - self.y)**2 + abs((self.goal.x - self.x)) ** 2)**(1/2)
         finish = 2 if self.reachedGoal else 0
         return (1/(distanceFromGoal**2) if distanceFromGoal != 0 else 1) + finish + (1/self.movesTaken**(3/2))
 
@@ -115,12 +134,19 @@ class Population:
         print("Population Initialized")
     
     def update(self):
-        for step in range(50):
+        finished = False
+        moves = 0
+        while not finished:
+            moves += 1
+            hasFinished = 0
             turtle.tracer(0,0)
             for player in self.playerPopulation:
-                player.move(step)
-                player.checkCollision()
+                player.calculateOutput()
+                if player.checkCollision():
+                    hasFinished += 1
             turtle.update()
+            if hasFinished == len(self.playerPopulation) or moves > 50:
+                finished = True
 
     def finished(self):
         for player in self.playerPopulation:
@@ -141,21 +167,23 @@ class Population:
         for i in range(len(self.playerPopulation)):
             parent1 = self.getParent(fitnessTotal)
             parent2 = self.getParent(fitnessTotal)
-            babyPaths = []
-            for j in range(50):
+            babycoefficients = []
+            for j in range(4):
                 rand = random.randint(0, 1)
                 if rand == 0:
-                    babyPaths.append(parent1.path[j])
+                    babycoefficients.append(parent1.coefficient[j])
                 elif rand == 1:
-                    babyPaths.append(parent2.path[j])
+                    babycoefficients.append(parent2.coefficient[j])
                 else:
                     print("You stupid")
             newPlayer = Player(self.goal, None, "green" if (parent1.won() or parent2.won()) else "black")
-            newPlayer.path = babyPaths
+            newPlayer.coefficient = babycoefficients
             newPlayer.vel = parent1.vel if random.random() > 0.5 else parent2.vel
             newPlayer.mutate()
             newPopulation.append(newPlayer)
         self.playerPopulation = newPopulation
+        self.goal.x = random.randint(-375, 375)
+        self.goal.y = random.randint(-275, 275)
 
     def getParent(self, fitnessTotal):
         randomFitness = random.randint(0, fitnessTotal)
@@ -179,7 +207,7 @@ turtle.tracer(0, 0)
 
 popSize = int(input("Population Size: "))
 goalTurtle = turtle.Turtle()
-goal = Goal(0, 275)
+goal = Goal(random.randint(-375, 375), random.randint(-275, 275))
 goalTurtle.penup()
 goalTurtle.hideturtle()
 goalTurtle.color("red")
@@ -212,7 +240,7 @@ try:
         genTurtle.penup()
         genTurtle.goto(275, 275)
         genTurtle.pendown()
-        genTurtle.write("Last gen winners:" + str(winners))
+        genTurtle.write("Last gen winners:" + str(100*int(winners)/round(popSize)) + "%")
         if generationCount > 0:
             for i in generation.playerPopulation:
                 i.playerTurtle = turtle.Turtle()
@@ -238,15 +266,15 @@ try:
 
         generationCount += 1
         generation.mutate()
-        window.clearscreen()
+        window.clear()
 except Exception:
     with open("BestPath.txt", "w") as f:
         fittest = []
         fitness = 0
         for i in generation.playerPopulation:
             if i.fitness() > fitness:
-                fittest = i.path
+                fittest = i.coefficient
                 fitness = i.fitness()
-        f.write(str(fittest))
+        f.write(fittest)
     
         
