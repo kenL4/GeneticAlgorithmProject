@@ -92,8 +92,8 @@ class Player:
         changeInX = (self.goal.x - self.x)
         distanceToGoal = (abs(self.goal.y - self.y)**2 + abs((self.goal.x - self.x)) ** 2)**(1/2)
         hiddenLayer = self.coefficient
-        moveX = (changeInX * hiddenLayer[0]) + 50 * hiddenLayer[2]
-        moveY = (changeInY * hiddenLayer[1]) + 50 * hiddenLayer[3]
+        moveX = (changeInX * hiddenLayer[0]) + (50 + distanceToGoal)* hiddenLayer[2]
+        moveY = (changeInY * hiddenLayer[1]) + (50 + distanceToGoal)* hiddenLayer[3]
         self.move(moveX, moveY)
 
     def fitness(self):
@@ -273,6 +273,14 @@ try:
                 winners += 1
 
         generationCount += 1
+        with open("BestPath.txt", "w") as f:
+            fittest = []
+            fitness = 0
+            for i in generation.playerPopulation:
+                if i.fitness() > fitness:
+                    fittest = i.coefficient
+                    fitness = i.fitness()
+            f.write(str(fittest[0]) + ", " + str(fittest[1]) + ", " + str(fittest[2]) + ", " + str(fittest[3]))
         generation.mutate()
         window.clear()
 except Exception:
